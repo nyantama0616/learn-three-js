@@ -1,4 +1,14 @@
+import * as THREE from 'three';
+import { FontLoader } from "three/examples/jsm/loaders/FontLoader.js";
+import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry.js";
+
 var camera, scene, render, objects = [];
+
+// フォントローダー
+const fontLoader = new FontLoader();
+
+// フォントを読み込む
+const font = await fontLoader.loadAsync(`/fonts/droid_sans_mono_regular.typeface.json`);
 
 window.onload = function(){
     init();
@@ -43,17 +53,42 @@ function init(){
     //マテリアルを作成(物体の質感とか見た目を設定するやつ)
     var material = new THREE.MeshBasicMaterial({ color: 0xff8080, emissive: 0xffffff, side: THREE.DoubleSide, flatShading: true });
     //追加
-    const box0 = new MyBox(material, [-10, 10, 0]);
-    scene.add(box0.mesh);
-    objects.push(box0);
+    // const box0 = new MyBox(material, [-10, 10, 0]);
+    // scene.add(box0.mesh);
+    // objects.push(box0);
     
     const sushi = new MySushi(0);
     scene.add(sushi.mesh);
     objects.push(sushi);
 
+    const text = new MyText(10);
+    scene.add(text.mesh)
+
     // リサイズ時に３D空間もリサイズする
     window.addEventListener('resize', onWindowResize, false);
 
+}
+
+function onWindowResize() {
+    //アスペクト比の変更
+    camera.aspect = width / height;
+    //カメラの内部状況の更新(新しいアスペクト比を読み込む)
+    camera.updateProjectionMatrix();
+    //3D空間のサイズ変更
+    renderer.setSize(width, height);
+}
+
+function update(){
+    //アニメーションつけるためのものupdate関数自体を引数に渡す
+    requestAnimationFrame( update );
+    //まわる
+    objects.forEach(obj => {
+        obj.update();
+    });
+    //今の画面を消す
+    render.clear();
+    //新しい画面を表示する
+    render.render(scene,camera);
 }
 
 class MyBox {
@@ -84,9 +119,8 @@ class MySushi {
                 // 縦横比を保って適当にリサイズ
                 const w = 5;
                 const h = tex.image.height / (tex.image.width / w);
-                console.log(tex);
 
-                const material = new THREE.MeshBasicMaterial({ color: 0xff8080, emissive: 0xffffff, side: THREE.DoubleSide, flatShading: true, map: tex});
+                const material = new THREE.MeshBasicMaterial({ color: 0xff8080, emissive: 0xffffff, side: THREE.DoubleSide, flatShading: true, map: tex });
                 this.mesh.material = material;
             });
         const cube = new THREE.BoxGeometry(10, 10, 10);
@@ -101,24 +135,20 @@ class MySushi {
     }
 }
 
-function onWindowResize() {
-    //アスペクト比の変更
-    camera.aspect = width / height;
-    //カメラの内部状況の更新(新しいアスペクト比を読み込む)
-    camera.updateProjectionMatrix();
-    //3D空間のサイズ変更
-    renderer.setSize(width, height);
-}
-
-function update(){
-    //アニメーションつけるためのものupdate関数自体を引数に渡す
-    requestAnimationFrame( update );
-    //まわる
-    objects.forEach(obj => {
-        obj.update();
-    });
-    //今の画面を消す
-    render.clear();
-    //新しい画面を表示する
-    render.render(scene,camera);
+class MyText {
+    constructor(y) {
+        // テキストメッシュ
+        this.mesh = new THREE.Mesh(
+            new TextGeometry(`Hello`, {
+                font: font, // フォントを指定 (FontLoaderで読み込んだjson形式のフォント)
+                size: 10,   // 文字のサイズを指定
+                height: 1,  // 文字の厚さを指定
+            }),
+            new THREE.MeshBasicMaterial({
+                color: `#000`, // 文字の色
+            })
+        );
+        this.mesh.position.set(-30, y, 0);   // Meshの位置を設定
+        this.mesh.scale.set(0.5, 0.5, 0.5); // Meshの拡大縮小設定
+    }
 }
